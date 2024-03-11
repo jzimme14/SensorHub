@@ -1,0 +1,7 @@
+1. Build Database to store the received data
+2. Write html file which showes the data from the database in a convenient manner
+3. Give the Server a static IP-adress
+4. Give the Server a local Hostname that is put into the routers DNS-Server list (example: butzdigga == 192.168.1.119:8080)
+5. Build the Transponder Board with the Lolin32 and the BME280 and make it send its data once every hour. While not sending, go to deepsleep-mode.
+
+6. (maybe) add a wakeup-controller to the lolin32 which starts the mcu only if it receives a specific signal
