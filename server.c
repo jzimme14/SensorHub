@@ -25,11 +25,11 @@ typedef struct {
 
 
 int main(void){
-   printf("test started with db! \n");
-   dataframe d = {3, 24.343, 65.4, 1058};
-   saveDataToDatabase(d);
+   //printf("test started with db! \n");
+   //dataframe d = {3, 24.343, 65.4, 1058};
+  // saveDataToDatabase(d);
 
-   while(1);
+//   while(1);
 
 
 
@@ -63,10 +63,11 @@ int main(void){
 
         	// GET /file.html .......
         	char* f = buffer + 5;
-        	*strchr(f, ' ') = 0;
+        	*strchr(f, ' ') = 0; 
 
         	// file handle of opened html-data
         	int opened_fd = open(f, O_RDONLY);
+		printf("file to read: %s\n", f);
 
         	// send file to client
         	sendfile(client_fd, opened_fd, 0, 256);
@@ -102,7 +103,9 @@ int main(void){
 		read(client_fd, buf, buf_size);
 		printf("read output: %s",buf);
 
-
+		// Testing on demand db-filling
+		dataframe d = {4, 232.3,64.9434,23.343};
+		saveDataToDatabase(d);
 
 		printf("\ntrying to write to %s\n", f);
 
@@ -168,3 +171,4 @@ int saveDataToDatabase(dataframe d){
 
 return 1;
 }
+
