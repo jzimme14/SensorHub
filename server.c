@@ -8,23 +8,34 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <time.h>
 // own file includes
-#include "sqlite/sqlite.h"
+#include "sqlite/sqlite3.h"
 
 // dataframe to hold a data-stamp from a specific transponder (date_and_time is added by the server at connection time)
 typedef struct {
-	char* date_and_time;
 	int transponderID;
 	float temp;
 	float hum;
 	float pressure;
 } dataframe;
 
-
+// prototypes
+ int saveDataToDatabase(dataframe d);
 
 
 int main(void){
-    
+   printf("test started with db! \n");
+   dataframe d = {3, 24.343, 65.4, 1058};
+   saveDataToDatabase(d);
+
+   while(1);
+
+
+
+
+
+
     // run variable
     bool running = true;
 
@@ -118,7 +129,7 @@ int main(void){
 
 
 
-int saveDataToDatabase(dataframe d, ){
+int saveDataToDatabase(dataframe d){
 
    sqlite3 *db;
    char *zErrMsg = 0;
@@ -135,10 +146,25 @@ int saveDataToDatabase(dataframe d, ){
       fprintf(stdout, "Opened database successfully\n");
    }
 
-   /* Create Table for Transponder Unit if it wasn't already created */
-   const char* create_table_sql = "CREATE TABLE IF NOT EXISTS Measurements (ID INTEGER PRIMARY KEY, temp REAL, hum REAL, pressure REAL, date_time TEXT);";
-   rc = sqlite3.exec(db, create_table_sql, 0,0,&zErrMsg);
+   /* Create Table for Measurements if it wasn't already created */
+   const char* create_table_sql = "CREATE TABLE IF NOT EXISTS Measurements (MeasNumber INTEGER PRIMARY KEY, ID INTEGER, temp REAL, hum REAL, pressure REAL, date_time TEXT);";
+   rc = sqlite3_exec(db, create_table_sql, 0,0,&zErrMsg);
+
+   /* Put Data into Database */
+   // Get Time from sqlite natively by using 'SELECT datetime('now','localtime')'
+   char insert_data_sql[200];
+   const char* insert_data_sql_blueprint = "INSERT INTO Measurements (ID, temp, hum, pressure, date_time) VALUES (%d, %.2f, %.2f, %.2f, datetime('now','localtime'));";
+   sprintf(insert_data_sql, insert_data_sql_blueprint, d.transponderID, d.temp, d.hum, d.pressure);
+   rc = sqlite3_exec(db, insert_data_sql,0,0,&zErrMsg);
 
 
+   if( rc ) {
+       fprintf(stderr, "cant add data: %s\n", sqlite3_errmsg(db));
+       return(0);
+   } else {
+       fprintf(stdout, "added data successfully\n");
+   }
 
+
+return 1;
 }
