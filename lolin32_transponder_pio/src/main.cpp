@@ -1,12 +1,20 @@
+/*
+Title:        Transponder Unit Code
+Author:       Jakob Zimmermann
+Purpose:      This Sketch reads temperature, humiditiy and pressure values from a BME280 sensor
+              and sends them to a Server using the http protocol. Then the MCU goes into deepsleep-
+              mode to conserve power.
+Important:    Before uploading this sketch to a new transponder unit, ensure to set a unique ID
+              for each unit in the 'id' variable. Additionally, configure the Wi-Fi network details
+              and server information accordingly.
+*/
+
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
-#include <string.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
-
-// letzte version meines transponders mit bme280 und esp und einem http-server auf meinem beelink
 
 typedef struct
 {
@@ -78,7 +86,7 @@ void loop()
 
 void initBME280()
 {
-  Wire.begin(23, 19);
+  Wire.begin(23, 17); // [sda = 23, scl = 17] vorher scl = 19
   Adafruit_BME280 b;
   int status = b.begin(0x76, &Wire);
   bme = *(&b);
