@@ -16,6 +16,8 @@ Important:    Before uploading this sketch to a new transponder unit, ensure to 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
 
+#define uS_factor 1000000
+
 typedef struct
 {
   int transponderID;
@@ -165,6 +167,8 @@ void sendHttpGetRequest()
 
 void deepSleep()
 {
-  esp_sleep_enable_timer_wakeup(10000000); // * 1e-6 eg microseconds
+  // twice a hour -> 60s * 30min = 1/2h
+  uint64_t t = uS_factor * 1800;
+  esp_sleep_enable_timer_wakeup(t); // * 1e-6 eg microseconds
   esp_deep_sleep_start();
 }
