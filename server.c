@@ -65,6 +65,7 @@ int main(void)
 		// http header information interface
 		HTTP_Request http_request = fill_http_request_obj(buffer);
 
+		printf("type: %s, content-length: %d, connection: %s", http_request.type, http_request.content_length, http_request.connection);
 		printf("\n\nbuffer: %s\n\n", buffer);
 
 		if (http_request.type == "GET")
@@ -199,7 +200,8 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	}
 	else
 	{
-		h.connection = "";
+		char i = "";
+		h.connection = *i;
 	}
 
 	return h;
