@@ -30,6 +30,7 @@ typedef struct
 
 // prototypes
 int saveDataToDatabase(dataframe d);
+HTTP_Request fill_http_request_obj(char*  buffer);
 
 int main(void)
 {
@@ -189,18 +190,18 @@ HTTP_Request fill_http_request_obj(char *buffer)
 
 	if (strstr(buffer, "POST"))
 	{
-		h.type = "POST"
+		h.type = "POST";
 	}
 
 	if (strstr(buffer, "GET"))
 	{
-		h.type = "GET"
+		h.type = "GET";
 	}
 
 	printf("http-type: %s\n", h.type);
 
 	// get content-length
-	int *clptr = strstr(buffer, "Content-Length:");
+	char *clptr = strstr(buffer, "Content-Length:");
 	clptr = clptr + 16;
 	printf("content length: %s, ", *clptr);
 	*strchr(clptr, '\n') = 0;
@@ -208,9 +209,10 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	h.content_length = *clptr;
 
 	// connection type
-	int *conptr = strstr(buffer, "Connection:");
+	char *conptr = strstr(buffer, "Connection:");
 	conptr = conptr + 12;
-	print("content length: %s, ", *conptr) * strchr(conptr, '\n') = 0;
+	printf("content length: %s, ", *conptr);
+	*strchr(conptr, '\n') = 0;
 	printf("content length: %s\n", *conptr);
 	h.connection = *conptr;
 
