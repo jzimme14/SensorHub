@@ -200,8 +200,7 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	}
 	else
 	{
-		char i = "";
-		h.connection = *i;
+		h.connection = "";
 	}
 
 	return h;
