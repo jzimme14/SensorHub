@@ -24,9 +24,9 @@ typedef struct
 
 typedef struct
 {
-	char *type;
+	char type[10];
 	int content_length;
-	char *connection;
+	char connection[20];
 } HTTP_Request;
 
 // prototypes
@@ -61,6 +61,8 @@ int main(void)
 
 		char buffer[256] = {0};
 		recv(client_fd, buffer, 256, 0);
+
+		printf("nach receive func");
 
 		// http header information interface
 		HTTP_Request http_request = fill_http_request_obj(buffer);
@@ -165,47 +167,44 @@ int saveDataToDatabase(dataframe d)
 // Blueprint for a http-header. Is filled after receiving raw header string. Used to access specific Header-Specifiers
 HTTP_Request fill_http_request_obj(char *buffer)
 {
-	HTTP_Request h;
+	HTTP_Request h = {"", 0, ""};
 
 	if (strstr(buffer, "POST"))
 	{
-		h.type = "POST";
+		strcpy(h.type, "POST");
+	}
+	else if (strstr(buffer, "GET"))
+	{
+		strcpy(h.type, "GET");
 	}
 
-	if (strstr(buffer, "GET"))
-	{
-		h.type = "GET";
-	}
+	printf("here");
 
 	// get content-length
-	char *buf1 = NULL;
-	strcpy(buf1, buffer);
-	char *clptr = strstr(buf1, "Content-Length:");
+	char *clptr = strstr(buffer, "Content-Length:");
 	if (clptr != NULL)
 	{
 		clptr = clptr + 16;
 		*strchr(clptr, '\n') = 0;
 		h.content_length = *clptr;
 	}
-	else
-	{
-		h.content_length = 0;
-	}
+	// else
+	// {
+	// 	h.content_length = 0;
+	// }
 
 	// connection type
-	char *buf2 = NULL;
-	strcpy(buf2, buffer);
-	char *conptr = strstr(buf2, "Connection:");
+	char *conptr = strstr(buffer, "Connection:");
 	if (conptr != NULL)
 	{
 		conptr = conptr + 12;
 		*strchr(conptr, '\n') = 0;
 		strcpy(h.connection, conptr);
 	}
-	else
-	{
-		h.connection = "";
-	}
+	// else
+	// {
+	// 	h.connection = "";
+	// }
 
 	return h;
 }
