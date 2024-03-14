@@ -106,7 +106,7 @@ void sendDataToServer(String measDataString)
 
   // Verbindung zum Server herstellen
   HTTPClient http;
-  http.begin("http://" + String(server) + ":" + String(port) + "/measData.txt");
+  http.begin("http://" + String(server) + ":" + String(port) + "/measData.db");
   http.addHeader("Content-Type", "text/plain");
 
   // HTTP POST-Anfrage senden

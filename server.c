@@ -61,11 +61,12 @@ int main(void)
 		char buffer[256] = {0};
 		recv(client_fd, buffer, 256, 0);
 
+		// http header information interface
 		HTTP_Request http_request = fill_http_request_obj(buffer);
 
-		printf("%s", buffer);
+		printf("\n\nbuffer: %s\n\n", buffer);
 
-		if (buffer[0] == 'G')
+		if (http_request.type == "GET")
 		{
 
 			// GET /file.html .......
@@ -84,34 +85,17 @@ int main(void)
 
 			printf("%s send to client!\n", f);
 		}
-		else if (buffer[0] == 'P')
+		else if (http_request.type == "POST")
 		{
 			// get file name to which data is posted to
 			char *f = buffer + 6;
 			*strchr(f, ' ') = 0;
 
-			// get data length
-			char *content_length_str = strstr(buffer, "Content-Length:");
-			if (content_length_str != NULL)
-			{
-				// Move the pointer to the value part of the header
-				content_length_str += strlen("Content-Length:");
-
-				// Extract the content length as an integer
-				int content_length;
-				sscanf(content_length_str, "%d", &content_length);
-
-				printf("Content-Length: %d\n", content_length);
-			}
-			else
-			{
-				printf("Content-Length header not found\n");
-			}
-
-			char buf[256];
-			int buf_size = 256;
-			read(client_fd, buf, buf_size);
-			printf("read output: %s", buf);
+			int payload_bufsize = http_request.content_length;
+			char *payload_buf = malloc(payload_bufsize);
+			printf("\ncontent length: %s, payload buffer size(bytes): %d", http_request.content_length, payload_bufsize);
+			read(client_fd, payload_buf, payload_bufsize);
+			printf("read output: %s", payload_buf);
 
 			// Testing on demand db-filling
 			dataframe d = {4, 232.3, 64.9434, 23.343};
@@ -119,15 +103,8 @@ int main(void)
 
 			printf("\ntrying to write to %s\n", f);
 
-			int opened_fd = open(f, O_WRONLY | O_CREAT | O_APPEND, 0644);
-
-			int wreturnval = write(opened_fd, buf, buf_size);
-			printf("write-return-val: %d\n", wreturnval);
-
 			char *response = "HTTP/1.1 200 OK\r\n";
 			send(client_fd, response, strlen(response), 0);
-
-			close(opened_fd);
 		}
 		close(client_fd);
 	}
@@ -198,23 +175,31 @@ HTTP_Request fill_http_request_obj(char *buffer)
 		h.type = "GET";
 	}
 
-	printf("http-type: %s\n", h.type);
-
 	// get content-length
 	char *clptr = strstr(buffer, "Content-Length:");
-	clptr = clptr + 16;
-	printf("content length: %s, ", clptr);
-	*strchr(clptr, '\n') = 0;
-	printf("content length: %s\n", clptr);
-	h.content_length = *clptr;
+	if (clptr != NULL)
+	{
+		clptr = clptr + 16;
+		*strchr(clptr, '\n') = 0;
+		h.content_length = *clptr;
+	}
+	else
+	{
+		h.content_length = 0;
+	}
 
 	// connection type
 	char *conptr = strstr(buffer, "Connection:");
-	conptr = conptr + 12;
-	printf("content length: %s, ", conptr);
-	*strchr(conptr, '\n') = 0;
-	printf("content length: %s\n", conptr);
-	h.connection = *conptr;
+	if (conptr != NULL)
+	{
+		conptr = conptr + 12;
+		*strchr(conptr, '\n') = 0;
+		h.connection = *conptr;
+	}
+	else
+	{
+		h.connection = "";
+	}
 
 	return h;
 }
