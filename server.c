@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <stdbool.h>
 #include <fcntl.h>
 #include <time.h>
@@ -194,7 +195,7 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	{
 		conptr = conptr + 12;
 		*strchr(conptr, '\n') = 0;
-		h.connection = *conptr;
+		h.connection = conptr;
 	}
 	else
 	{
