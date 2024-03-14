@@ -178,7 +178,9 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	}
 
 	// get content-length
-	char *clptr = strstr(buffer, "Content-Length:");
+	char *buf1 = NULL;
+	strcpy(buf1, buffer);
+	char *clptr = strstr(buf1, "Content-Length:");
 	if (clptr != NULL)
 	{
 		clptr = clptr + 16;
@@ -191,12 +193,14 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	}
 
 	// connection type
-	char *conptr = strstr(buffer, "Connection:");
+	char *buf2 = NULL;
+	strcpy(buf2, buffer);
+	char *conptr = strstr(buf2, "Connection:");
 	if (conptr != NULL)
 	{
 		conptr = conptr + 12;
 		*strchr(conptr, '\n') = 0;
-		h.connection = conptr;
+		strcpy(h.connection, conptr);
 	}
 	else
 	{
