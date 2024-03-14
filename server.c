@@ -197,10 +197,22 @@ HTTP_Request fill_http_request_obj(char *buffer)
 		h.type = "GET"
 	}
 
+	printf("http-type: %s\n", h.type);
+
 	// get content-length
 	int *clptr = strstr(buffer, "Content-Length:");
-	clptr = clptr + 15;
-	printf("content length: %d", *clptr);
+	clptr = clptr + 16;
+	printf("content length: %s, ", *clptr);
+	*strchr(clptr, '\n') = 0;
+	printf("content length: %s\n", *clptr);
+	h.content_length = *clptr;
+
+	// connection type
+	int *conptr = strstr(buffer, "Connection:");
+	conptr = conptr + 12;
+	print("content length: %s, ", *conptr) * strchr(conptr, '\n') = 0;
+	printf("content length: %s\n", *conptr);
+	h.connection = *conptr;
 
 	return h;
 }
