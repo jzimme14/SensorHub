@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <fcntl.h>
 #include <time.h>
+#include <stdbool.h>
 // own file includes
 #include "sqlite/sqlite3.h"
 
@@ -19,6 +20,11 @@ typedef struct {
 	float hum;
 	float pressure;
 } dataframe;
+
+typedef struct {
+	char* type;
+	int content_length;
+} HTTP_Request;
 
 // prototypes
  int saveDataToDatabase(dataframe d);
@@ -56,6 +62,8 @@ int main(void){
 
         char buffer[256] = {0};
         recv(client_fd, buffer, 256,0);
+	
+	HTTP_Request http_request = fill_http_request_object(buffer);
 
 	printf("%s", buffer);
 
