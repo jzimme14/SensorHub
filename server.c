@@ -21,6 +21,13 @@ typedef struct
 	float pressure;
 } dataframe;
 
+typedef struct
+{
+	char *type;
+	int content_length;
+	char *connection;
+} HTTP_Request;
+
 // prototypes
 int saveDataToDatabase(dataframe d);
 
@@ -52,6 +59,8 @@ int main(void)
 
 		char buffer[256] = {0};
 		recv(client_fd, buffer, 256, 0);
+
+		HTTP_Request http_request = fill_http_request_obj(buffer);
 
 		printf("%s", buffer);
 
@@ -171,4 +180,27 @@ int saveDataToDatabase(dataframe d)
 	}
 
 	return 1;
+}
+
+// Blueprint for a http-header. Is filled after receiving raw header string. Used to access specific Header-Specifiers
+HTTP_Request fill_http_request_obj(char *buffer)
+{
+	HTTP_Request h;
+
+	if (strstr(buffer, "POST"))
+	{
+		h.type = "POST"
+	}
+
+	if (strstr(buffer, "GET"))
+	{
+		h.type = "GET"
+	}
+
+	// get content-length
+	int *clptr = strstr(buffer, "Content-Length:");
+	clptr = clptr + 15;
+	printf("content length: %d", *clptr);
+
+	return h;
 }
