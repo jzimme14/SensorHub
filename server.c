@@ -68,15 +68,23 @@ int main(void)
 		{
 			printf("entered GET section\n");
 
-			// file handle of opened html-data
-			int opened_fd = open(http_request.target_file, O_RDONLY);
-			printf("file to read: %s\n", http_request.target_file);
+			if (strcmp(http_request.target_file, "close_socket") == 0)
+			{
+				printf("\nsocket is closed! \n");
+				running = false;
+			}
+			else
+			{
+				// file handle of opened html-data
+				int opened_fd = open(http_request.target_file, O_RDONLY);
+				printf("file to read: %s\n", http_request.target_file);
 
-			// send file to client
-			sendfile(client_fd, opened_fd, 0, 256);
+				// send file to client
+				sendfile(client_fd, opened_fd, 0, 256);
 
-			// close file descriptor of data
-			close(opened_fd);
+				// close file descriptor of data
+				close(opened_fd);
+			}
 		}
 		else if (strcmp(http_request.type, "POST") == 0)
 		{
@@ -93,7 +101,7 @@ int main(void)
 			// save data to sqlite-database
 			saveDataToDatabase(payload);
 
-			char *response = "HTTP/1.1 200 OK\r\nServer: butzdigga\r\n";
+			char *response = "HTTP/1.1 200 OK\r\nServer: butzdigga\r\nConnection: close\r\n";
 			send(client_fd, response, strlen(response), 0);
 
 			free(http_request.payload);
