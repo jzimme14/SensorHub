@@ -57,6 +57,7 @@ int main(void)
 
 		char buffer[256] = {0};
 		recv(client_fd, buffer, 256, 0);
+		printf("buffer:\n%s\n\n", buffer);
 
 		// http header information interface
 		HTTP_Request http_request = http_request_constr(buffer);
