@@ -27,11 +27,14 @@ typedef struct
 	char type[10];
 	int content_length;
 	char connection[20];
+	char content_type[20];
+	char target_file[20];
+	char *payload;
 } HTTP_Request;
 
 // prototypes
 int saveDataToDatabase(dataframe d);
-HTTP_Request fill_http_request_obj(char *buffer);
+HTTP_Request http_request_constr(char *buffer);
 
 int main(void)
 {
@@ -62,20 +65,15 @@ int main(void)
 		char buffer[256] = {0};
 		recv(client_fd, buffer, 256, 0);
 
-		printf("nach receive func");
-
 		// http header information interface
-		HTTP_Request http_request = fill_http_request_obj(buffer);
+		HTTP_Request http_request = http_request_constr(buffer);
 
-		printf("type: %s, content-length: %d, connection: %s", http_request.type, http_request.content_length, http_request.connection);
+		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file);
 		printf("\n\nbuffer: %s\n\n", buffer);
 
-		if (http_request.type == "GET")
+		if (strcmp(http_request.type, "GET") == 0)
 		{
-
-			// GET /file.html .......
-			char *f = buffer + 5;
-			*strchr(f, ' ') = 0;
+			printf("entered GET section\n");
 
 			// file handle of opened html-data
 			int opened_fd = open(f, O_RDONLY);
@@ -89,26 +87,23 @@ int main(void)
 
 			printf("%s send to client!\n", f);
 		}
-		else if (http_request.type == "POST")
+		else if (strcmp(http_request.type, "POST") == 0)
 		{
-			// get file name to which data is posted to
-			char *f = buffer + 6;
-			*strchr(f, ' ') = 0;
-
-			int payload_bufsize = http_request.content_length;
-			char *payload_buf = malloc(payload_bufsize);
-			printf("\ncontent length: %s, payload buffer size(bytes): %d", http_request.content_length, payload_bufsize);
-			read(client_fd, payload_buf, payload_bufsize);
-			printf("read output: %s", payload_buf);
+			http_request.payload = malloc(http_request.content_length);
+			printf("payload buffer size(bytes): %d\n", http_request.content_length);
+			read(client_fd, http_request.payload, http_request.content_length);
+			printf("read output: %s", http_request.payload);
 
 			// Testing on demand db-filling
 			dataframe d = {4, 232.3, 64.9434, 23.343};
 			saveDataToDatabase(d);
 
-			printf("\ntrying to write to %s\n", f);
+			printf("\ntrying to write to %s\n", http_request.target_file);
 
 			char *response = "HTTP/1.1 200 OK\r\n";
 			send(client_fd, response, strlen(response), 0);
+
+			free(http_request.payload);
 		}
 		close(client_fd);
 	}
@@ -165,7 +160,7 @@ int saveDataToDatabase(dataframe d)
 }
 
 // Blueprint for a http-header. Is filled after receiving raw header string. Used to access specific Header-Specifiers
-HTTP_Request fill_http_request_obj(char *buffer)
+HTTP_Request http_request_constr(char *buffer)
 {
 	HTTP_Request h = {"", 0, ""};
 
@@ -178,10 +173,13 @@ HTTP_Request fill_http_request_obj(char *buffer)
 		strcpy(h.type, "GET");
 	}
 
-	printf("here");
+	int buflen = strlen(buffer);
+
+	char *ubuf = malloc(buflen);
+	strcpy(ubuf, buffer);
 
 	// get content-length
-	char *clptr = strstr(buffer, "Content-Length:");
+	char *clptr = strstr(ubuf, "Content-Length:");
 	if (clptr != NULL)
 	{
 		clptr = clptr + 16;
@@ -192,9 +190,13 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	// {
 	// 	h.content_length = 0;
 	// }
+	free(ubuf);
+
+	char *ubuf1 = malloc(buflen);
+	strcpy(ubuf1, buffer);
 
 	// connection type
-	char *conptr = strstr(buffer, "Connection:");
+	char *conptr = strstr(ubuf1, "Connection:");
 	if (conptr != NULL)
 	{
 		conptr = conptr + 12;
@@ -205,6 +207,35 @@ HTTP_Request fill_http_request_obj(char *buffer)
 	// {
 	// 	h.connection = "";
 	// }
+	free(ubuf1);
+
+	char *ubuf2 = malloc(buflen);
+	strcpy(ubuf2, buffer);
+	char *contypeptr = strstr(ubuf2, "Content-Type: ");
+	if (contypeptr != NULL)
+	{
+		contypeptr += 14;
+		*strchr(contypeptr, '\n') = 0;
+		strcpy(h.content_type, contypeptr);
+	}
+	free(ubuf2);
+
+	char *ubuf3 = malloc(buflen);
+	strcpy(ubuf3, buffer);
+
+	char *tardatptr = ubuf3;
+	if (strcmp(h.type, "POST") == 0)
+	{
+		tardatptr += 6;
+	}
+	else if (strcmp(h.type, "GET") == 0)
+	{
+		tardatptr += 5;
+	}
+
+	*strchr(tardatptr, ' ') = 0;
+	strcpy(h.target_file, tardatptr);
+	free(ubuf3);
 
 	return h;
 }
