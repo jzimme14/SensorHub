@@ -12,6 +12,7 @@ Important:    Before uploading this sketch to a new transponder unit, ensure to 
 #include <Arduino.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <esp_system.h>
 
 #include <Wire.h>
 #include <Adafruit_BME280.h>
@@ -74,8 +75,6 @@ void loop()
   }
   Serial.print("\nlocal IP: ");
   Serial.println(WiFi.localIP());
-  Serial.print("gateway IP: ");
-  Serial.println(WiFi.gatewayIP());
 
   Serial.println(dataframeToString(measData));
 
@@ -103,11 +102,11 @@ dataframe getBME280Readings()
 /* Builds a POST Request and sends it to the server */
 void sendDataToServer(String measDataString)
 {
-
   // Verbindung zum Server herstellen
   HTTPClient http;
   http.begin("http://" + String(server) + ":" + String(port) + "/measData.db");
   http.addHeader("Content-Type", "text/plain");
+  // http.addHeader("Connection", "close");
 
   // HTTP POST-Anfrage senden
   int httpResponseCode = http.POST(measDataString);
@@ -120,6 +119,11 @@ void sendDataToServer(String measDataString)
     String response = http.getString();
     Serial.println(response);
   }
+  else if (httpResponseCode == -1)
+  {
+    deepSleep();
+    esp_restart();
+  }
   else
   {
     Serial.print("HTTP POST failed, error: ");
@@ -128,6 +132,9 @@ void sendDataToServer(String measDataString)
 
   // Verbindung schließen
   http.end();
+  while (http.connected())
+  {
+  }
 }
 
 String dataframeToString(dataframe d)
