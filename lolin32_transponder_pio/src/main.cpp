@@ -88,7 +88,7 @@ void loop()
 
 void initBME280()
 {
-  Wire.begin(23, 17); // [sda = 23, scl = 17] vorher scl = 19
+  Wire.begin(23, 19); // [sda = 23, scl = 17] vorher scl = 19
   Adafruit_BME280 b;
   int status = b.begin(0x76, &Wire);
   bme = *(&b);
@@ -168,7 +168,7 @@ void sendHttpGetRequest()
 void deepSleep()
 {
   // twice a hour -> 60s * 30min = 1/2h
-  uint64_t t = uS_factor * 1800;
+  uint64_t t = uS_factor * 18;
   esp_sleep_enable_timer_wakeup(t); // * 1e-6 eg microseconds
   esp_deep_sleep_start();
 }
