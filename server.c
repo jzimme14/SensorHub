@@ -35,23 +35,16 @@ typedef struct
 // prototypes
 int saveDataToDatabase(dataframe d);
 HTTP_Request http_request_constr(char *buffer);
+void print_visible_characters(const char *str);
+dataframe ReceivedData_into_Dataframe(char *s);
 
 int main(void)
 {
-	// printf("test started with db! \n");
-	// dataframe d = {3, 24.343, 65.4, 1058};
-	// saveDataToDatabase(d);
-
-	//   while(1);
-
 	// run variable
 	bool running = true;
 
 	// create special instance of sockaddr_in
-	struct sockaddr_in addr = {
-		AF_INET,
-		0x901F,
-		0};
+	const struct sockaddr_in addr = {AF_INET, 0x901F, 0};
 
 	int s = socket(AF_INET, SOCK_STREAM, 0);
 	bind(s, &addr, sizeof(addr));
@@ -67,40 +60,39 @@ int main(void)
 
 		// http header information interface
 		HTTP_Request http_request = http_request_constr(buffer);
-
-		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file);
-		printf("\n\nbuffer: %s\n\n", buffer);
+		// print_visible_characters(buffer);
+		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file);
 
 		if (strcmp(http_request.type, "GET") == 0)
 		{
 			printf("entered GET section\n");
 
 			// file handle of opened html-data
-			int opened_fd = open(f, O_RDONLY);
-			printf("file to read: %s\n", f);
+			int opened_fd = open(http_request.target_file, O_RDONLY);
+			printf("file to read: %s\n", http_request.target_file);
 
 			// send file to client
 			sendfile(client_fd, opened_fd, 0, 256);
 
 			// close file descriptor of data
 			close(opened_fd);
-
-			printf("%s send to client!\n", f);
 		}
 		else if (strcmp(http_request.type, "POST") == 0)
 		{
 			http_request.payload = malloc(http_request.content_length);
 			printf("payload buffer size(bytes): %d\n", http_request.content_length);
 			read(client_fd, http_request.payload, http_request.content_length);
-			printf("read output: %s", http_request.payload);
+			printf("read output: %s\n", http_request.payload);
 
-			// Testing on demand db-filling
-			dataframe d = {4, 232.3, 64.9434, 23.343};
-			saveDataToDatabase(d);
+			// Put received data into fitting dataframe/format
+			dataframe payload;
+			memset(&payload, 0, sizeof(dataframe));
+			payload = ReceivedData_into_Dataframe(http_request.payload);
 
-			printf("\ntrying to write to %s\n", http_request.target_file);
+			// save data to sqlite-database
+			saveDataToDatabase(payload);
 
-			char *response = "HTTP/1.1 200 OK\r\n";
+			char *response = "HTTP/1.1 200 OK\r\nServer: butzdigga\r\n";
 			send(client_fd, response, strlen(response), 0);
 
 			free(http_request.payload);
@@ -112,6 +104,23 @@ int main(void)
 	close(s);
 
 	return 0;
+}
+
+dataframe ReceivedData_into_Dataframe(char *s)
+{
+	dataframe d;
+	memset(&d, 0, sizeof(dataframe));
+
+	int retVal = sscanf(s, "%d,%f,%f,%f", &d.transponderID, &d.temp, &d.hum, &d.pressure);
+	if (retVal == 4)
+	{
+		return d;
+	}
+	else
+	{
+		fprintf(stderr, "read error occured! ");
+		exit(11);
+	}
 }
 
 int saveDataToDatabase(dataframe d)
@@ -156,13 +165,16 @@ int saveDataToDatabase(dataframe d)
 		fprintf(stdout, "added data successfully\n");
 	}
 
-	return 1;
+	sqlite3_close(db);
+
+	return 0;
 }
 
 // Blueprint for a http-header. Is filled after receiving raw header string. Used to access specific Header-Specifiers
 HTTP_Request http_request_constr(char *buffer)
 {
-	HTTP_Request h = {"", 0, ""};
+	HTTP_Request h;
+	memset(&h, 0, sizeof(HTTP_Request));
 
 	if (strstr(buffer, "POST"))
 	{
@@ -173,69 +185,125 @@ HTTP_Request http_request_constr(char *buffer)
 		strcpy(h.type, "GET");
 	}
 
+	// get length of buffer
 	int buflen = strlen(buffer);
-
-	char *ubuf = malloc(buflen);
-	strcpy(ubuf, buffer);
+	buflen++;
 
 	// get content-length
-	char *clptr = strstr(ubuf, "Content-Length:");
-	if (clptr != NULL)
+	char *ubuf = malloc(buflen);
+	if (ubuf != NULL)
 	{
-		clptr = clptr + 16;
-		*strchr(clptr, '\n') = 0;
-		h.content_length = *clptr;
+		strcpy(ubuf, buffer);
+		char *clptr = strstr(ubuf, "Content-Length:");
+		if (clptr != NULL)
+		{
+			clptr = clptr + 16;
+			char *endptr = strchr(clptr, '\r');
+			if (endptr != NULL)
+			{
+				// Nullterminiere den String, damit atoi nur die Zahl liest
+				*endptr = '\0';
+				// Konvertiere die Zahl in einen Integer
+				h.content_length = atoi(clptr);
+			}
+		}
 	}
-	// else
-	// {
-	// 	h.content_length = 0;
-	// }
+	else
+	{
+		h.content_length = 0;
+	}
 	free(ubuf);
 
-	char *ubuf1 = malloc(buflen);
-	strcpy(ubuf1, buffer);
-
 	// connection type
-	char *conptr = strstr(ubuf1, "Connection:");
-	if (conptr != NULL)
+	char *ubuf1 = malloc(buflen);
+	if (ubuf1 != NULL)
 	{
-		conptr = conptr + 12;
-		*strchr(conptr, '\n') = 0;
-		strcpy(h.connection, conptr);
+		strcpy(ubuf1, buffer);
+		char *conptr = strstr(ubuf1, "Connection:");
+		if (conptr != NULL)
+		{
+			conptr = conptr + 12;
+			*strchr(conptr, '\r') = 0;
+			strcpy(h.connection, conptr);
+		}
 	}
-	// else
-	// {
-	// 	h.connection = "";
-	// }
+	else
+	{
+		strcpy(h.connection, " ");
+	}
 	free(ubuf1);
 
+	// get connection type
 	char *ubuf2 = malloc(buflen);
-	strcpy(ubuf2, buffer);
-	char *contypeptr = strstr(ubuf2, "Content-Type: ");
-	if (contypeptr != NULL)
+	if (ubuf2 != NULL)
 	{
-		contypeptr += 14;
-		*strchr(contypeptr, '\n') = 0;
-		strcpy(h.content_type, contypeptr);
+		strcpy(ubuf2, buffer);
+		char *contypeptr = strstr(ubuf2, "Content-Type: ");
+		if (contypeptr != NULL)
+		{
+			contypeptr += 14;
+			*strchr(contypeptr, '\r') = 0;
+			strcpy(h.content_type, contypeptr);
+		}
 	}
 	free(ubuf2);
 
+	// get target directory
 	char *ubuf3 = malloc(buflen);
-	strcpy(ubuf3, buffer);
-
-	char *tardatptr = ubuf3;
-	if (strcmp(h.type, "POST") == 0)
+	if (ubuf3 != NULL)
 	{
-		tardatptr += 6;
-	}
-	else if (strcmp(h.type, "GET") == 0)
-	{
-		tardatptr += 5;
-	}
+		strcpy(ubuf3, buffer);
+		char *tardatptr = ubuf3;
+		if (strcmp(h.type, "POST") == 0)
+		{
+			tardatptr += 6;
+		}
+		else if (strcmp(h.type, "GET") == 0)
+		{
+			tardatptr += 5;
+		}
 
-	*strchr(tardatptr, ' ') = 0;
-	strcpy(h.target_file, tardatptr);
+		*strchr(tardatptr, ' ') = 0;
+		strcpy(h.target_file, tardatptr);
+	}
 	free(ubuf3);
 
 	return h;
+}
+
+void print_visible_characters(const char *str)
+{
+	// Gehe durch jeden Zeichen im String
+	for (int i = 0; str[i] != '\0'; i++)
+	{
+		// Überprüfe, ob das Zeichen ein unsichtbares Zeichen ist
+		if (str[i] == ' ' || str[i] == '\t' || str[i] == '\n' || str[i] == '\r')
+		{
+			// Gib das unsichtbare Zeichen als Escape-Sequenz aus
+			switch (str[i])
+			{
+			case ' ':
+				printf("' ' (Space)\n");
+				break;
+			case '\t':
+				printf("\\t (Tab)\n");
+				break;
+			case '\n':
+				printf("\\n (Newline)\n");
+				break;
+			case '\r':
+				printf("\\r (Carriage Return)\n");
+				break;
+			// Füge weitere unsichtbare Zeichen nach Bedarf hinzu
+			default:
+				printf("Unknown invisible character\n");
+				break;
+			}
+		}
+		else
+		{
+			// Gib sichtbare Zeichen direkt aus
+			printf("%c\n", str[i]);
+		}
+	}
 }
