@@ -44,7 +44,7 @@ const char *password = "78811928";
 
 // server data
 const char *server = "192.168.1.119"; // ip of butzdigga-server
-const int port = 8080;
+const int port = 80;
 const char *filename = "/index.html";
 const char *url = "192.168.1.119:8080/index.html";
 
