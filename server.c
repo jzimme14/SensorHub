@@ -127,13 +127,25 @@ int main(void)
 			payload = ReceivedData_into_Dataframe(http_request.payload);
 
 			// save data to sqlite-database
-			saveDataToDatabase(payload);
+			int db_operation_retval = saveDataToDatabase(payload);
 
-			char *response = "HTTP/1.1 200 OK\r\n\r\nHTTP/1.1 200 OK";
-			if (send(client_fd, response, strlen(response), 0) == -1)
+			if (db_operation_retval == 0)
 			{
-				fprintf(stderr, "sending ok response failed...");
-				exit(-8);
+				char *response = "HTTP/1.1 200 OK\r\n\r\nHTTP/1.1 200 OK";
+				if (send(client_fd, response, strlen(response), 0) == -1)
+				{
+					fprintf(stderr, "sending ok response failed...");
+					exit(-8);
+				}
+			}
+			else
+			{
+				char *response = "HTTP/1.1 404 NO\r\n\r\nHTTP/1.1 404 NO";
+				if (send(client_fd, response, strlen(response), 0) == -1)
+				{
+					fprintf(stderr, "sending no response failed...");
+					exit(-11);
+				}
 			}
 
 			free(http_request.payload);
@@ -190,11 +202,7 @@ int saveDataToDatabase(dataframe d)
 	if (rc)
 	{
 		fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
-		return (0);
-	}
-	else
-	{
-		fprintf(stdout, "Opened database successfully\n");
+		return (-1);
 	}
 
 	/* Create Table for Measurements if it wasn't already created */
@@ -211,11 +219,7 @@ int saveDataToDatabase(dataframe d)
 	if (rc)
 	{
 		fprintf(stderr, "cant add data: %s\n", sqlite3_errmsg(db));
-		return (0);
-	}
-	else
-	{
-		fprintf(stdout, "added data successfully\n");
+		return (-2);
 	}
 
 	sqlite3_close(db);
