@@ -46,20 +46,31 @@ int main(void)
 	bool running = true;
 
 	// create special instance of sockaddr_in
-	const struct sockaddr_in addr = {AF_INET, 0x901F, 0};
+	struct sockaddr_in addr = {AF_INET, 0x901F, 0};
 
 	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (bind(socket_fd, &addr, sizeof(addr)) != 0)
+
+	printf("\nbinding socket");
+	fflush(stdout);
+	while (bind(socket_fd, (struct sockaddr *)&addr, sizeof(addr)) != 0)
 	{
-		fprintf(stderr, "bind failed...");
-		exit(-3);
+		printf(".");
+		fflush(stdout);
+		sleep(1);
 	}
+
+	printf("\n bind successful! \n");
 
 	while (running)
 	{
 		listen(socket_fd, 10);
 
 		int client_fd = accept(socket_fd, 0, 0);
+		if (client_fd == -1)
+		{
+			fprintf(stderr, "accept failed...");
+			exit(-10);
+		}
 
 		char buffer[256] = {0};
 		if (recv(client_fd, buffer, 256, 0) == -1)
@@ -118,8 +129,12 @@ int main(void)
 			// save data to sqlite-database
 			saveDataToDatabase(payload);
 
-			char *response = "HTTP/1.1 200 OK\r\nServer: butzdigga\r\nConnection: close\r\n";
-			send(socket_fd, response, strlen(response), 0);
+			char *response = "HTTP/1.1 200 OK\r\n\r\nHTTP/1.1 200 OK";
+			if (send(client_fd, response, strlen(response), 0) == -1)
+			{
+				fprintf(stderr, "sending ok response failed...");
+				exit(-8);
+			}
 
 			free(http_request.payload);
 		}
