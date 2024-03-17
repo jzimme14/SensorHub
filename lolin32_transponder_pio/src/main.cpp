@@ -44,9 +44,9 @@ const char *password = "78811928";
 
 // server data
 const char *server = "192.168.1.119"; // ip of butzdigga-server
-const int port = 80;
+const int port = 8080;
 const char *filename = "/index.html";
-const char *url = "192.168.1.119:8080/index.html";
+const char *url = "http://192.168.1.119:8080/measData.db";
 
 // BME stuff
 Adafruit_BME280 bme;
@@ -103,8 +103,10 @@ dataframe getBME280Readings()
 void sendDataToServer(String measDataString)
 {
   // Verbindung zum Server herstellen
+  WiFiClient client;
   HTTPClient http;
-  http.begin("http://" + String(server) + ":" + String(port) + "/measData.db");
+  // http.begin("http://" + String(server) + ":" + String(port) + "/measData.db");
+  http.begin(client, url);
   http.addHeader("Content-Type", "text/plain");
   // http.addHeader("Connection", "close");
 
