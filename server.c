@@ -13,6 +13,8 @@
 // own file includes
 #include "sqlite/sqlite3.h"
 
+#define _GNU_SOURCE
+
 // dataframe to hold a data-stamp from a specific transponder (date_and_time is added by the server at connection time)
 typedef struct
 {
@@ -46,20 +48,27 @@ int main(void)
 	// create special instance of sockaddr_in
 	const struct sockaddr_in addr = {AF_INET, 0x901F, 0};
 
-	int s = socket(AF_INET, SOCK_STREAM, 0);
-	bind(s, &addr, sizeof(addr));
+	int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (bind(socket_fd, &addr, sizeof(addr)) != 0)
+	{
+		fprintf(stderr, "bind failed...");
+		exit(-3);
+	}
 
 	while (running)
 	{
-		listen(s, 10);
+		listen(socket_fd, 10);
 
-		int client_fd = accept(s, 0, 0);
+		int client_fd = accept(socket_fd, 0, 0);
 
 		char buffer[256] = {0};
-		recv(client_fd, buffer, 256, 0);
-		printf("buffer:\n%s\n\n", buffer);
+		if (recv(client_fd, buffer, 256, 0) == -1)
+		{
+			fprintf(stderr, "recv failed...");
+			exit(-4);
+		}
 
-		// http header information interface
+		// http header interface
 		HTTP_Request http_request = http_request_constr(buffer);
 		// print_visible_characters(buffer);
 		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file);
@@ -89,8 +98,16 @@ int main(void)
 		else if (strcmp(http_request.type, "POST") == 0)
 		{
 			http_request.payload = malloc(http_request.content_length);
-			printf("payload buffer size(bytes): %d\n", http_request.content_length);
-			read(client_fd, http_request.payload, http_request.content_length);
+			if (http_request.payload == NULL)
+			{
+				fprintf(stderr, "malloc failed for http_req.payload...");
+				exit(-6);
+			}
+			if (read(client_fd, http_request.payload, http_request.content_length) == -1)
+			{
+				fprintf(stderr, "reading POST-payload failed...");
+				exit(-7);
+			}
 			printf("read output: %s\n", http_request.payload);
 
 			// Put received data into fitting dataframe/format
@@ -102,15 +119,27 @@ int main(void)
 			saveDataToDatabase(payload);
 
 			char *response = "HTTP/1.1 200 OK\r\nServer: butzdigga\r\nConnection: close\r\n";
-			send(client_fd, response, strlen(response), 0);
+			send(socket_fd, response, strlen(response), 0);
 
 			free(http_request.payload);
 		}
-		close(client_fd);
+		else
+		{
+			fprintf(stderr, "\naccessed using unknown http-request...");
+		}
+		// close client connection
+		if (close(client_fd) != 0)
+		{
+			fprintf(stderr, "closing client connection failed...");
+			exit(-5);
+		}
 	}
 
 	// close socket
-	close(s);
+	if (close(socket_fd) != 0)
+	{
+		fprintf(stderr, "closing socket failed...");
+	}
 
 	return 0;
 }
