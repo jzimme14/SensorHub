@@ -32,6 +32,7 @@ typedef struct
 	char content_type[20];
 	char target_file[20];
 	char *payload;
+	char acceptedFormat[10];
 } HTTP_Request;
 
 // prototypes
@@ -78,11 +79,13 @@ int main(void)
 			fprintf(stderr, "recv failed...");
 			exit(-4);
 		}
+		printf("\n\n buffer: \n%s\n\n", buffer);
+		fflush(stdout);
 
 		// http header interface
 		HTTP_Request http_request = http_request_constr(buffer);
 		// print_visible_characters(buffer);
-		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file);
+		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \naccepted-format: %s\n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file, http_request.acceptedFormat);
 
 		if (strcmp(http_request.type, "GET") == 0)
 		{
@@ -97,13 +100,36 @@ int main(void)
 			{
 				// file handle of opened html-data
 				int opened_fd = open(http_request.target_file, O_RDONLY);
-				printf("file to read: %s\n", http_request.target_file);
+				if (opened_fd == -1)
+				{
+					char *response = "HTTP/1.1 404 NotFound\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n404 Not Found";
+					send(client_fd, response, strlen(response), 0);
+				}
+				else
+				{
+					printf("file to read: %s\n", http_request.target_file);
 
-				// send file to client
-				sendfile(client_fd, opened_fd, 0, 256);
+					// send file to client
 
-				// close file descriptor of data
-				close(opened_fd);
+					int responseLength = strlen("HTTP/1.1 200 ok\r\ncontent-type: %s\r\n\r\n") + 10;
+
+					// Reserviere Speicherplatz für die Antwortzeichenfolge
+					char *response = (char *)malloc(responseLength + 1); // +1 für das Nullzeichen am Ende
+					response = "";
+
+					// Füge den dynamischen String in die Antwortzeichenfolge ein
+					sprintf(response, "HTTP/1.1 200 ok\r\ncontent-type: %s\r\n\r\n", http_request.acceptedFormat);
+
+					// Jetzt kannst du die Antwortzeichenfolge verwenden
+					printf("\nResponse: %s, length: %d\n", response, responseLength);
+
+					send(client_fd, response, strlen(response), 0);
+					sendfile(client_fd, opened_fd, 0, 65400);
+
+					// close file descriptor of data
+					close(opened_fd);
+					free(response);
+				}
 			}
 		}
 		else if (strcmp(http_request.type, "POST") == 0)
@@ -264,11 +290,12 @@ HTTP_Request http_request_constr(char *buffer)
 				h.content_length = atoi(clptr);
 			}
 		}
+		else
+		{
+			h.content_length = 0;
+		}
 	}
-	else
-	{
-		h.content_length = 0;
-	}
+
 	free(ubuf);
 
 	// connection type
@@ -283,14 +310,15 @@ HTTP_Request http_request_constr(char *buffer)
 			*strchr(conptr, '\r') = 0;
 			strcpy(h.connection, conptr);
 		}
+		else
+		{
+			strcpy(h.connection, "n");
+		}
 	}
-	else
-	{
-		strcpy(h.connection, " ");
-	}
+
 	free(ubuf1);
 
-	// get connection type
+	// get content type
 	char *ubuf2 = malloc(buflen);
 	if (ubuf2 != NULL)
 	{
@@ -301,6 +329,10 @@ HTTP_Request http_request_constr(char *buffer)
 			contypeptr += 14;
 			*strchr(contypeptr, '\r') = 0;
 			strcpy(h.content_type, contypeptr);
+		}
+		else
+		{
+			strcpy(h.connection, "n");
 		}
 	}
 	free(ubuf2);
@@ -324,6 +356,36 @@ HTTP_Request http_request_constr(char *buffer)
 		strcpy(h.target_file, tardatptr);
 	}
 	free(ubuf3);
+
+	// get accepted format
+	char *ubuf4 = malloc(buflen);
+	if (ubuf4 != NULL)
+	{
+		strcpy(ubuf3, buffer);
+		char *aformatptr = strstr(ubuf4, "Accept: ");
+		printf("\n\n%s\n\n", aformatptr);
+		if (aformatptr != NULL)
+		{
+			aformatptr = strstr(aformatptr, "text");
+			printf("\n\n%s\n\n", aformatptr);
+			if (aformatptr != NULL)
+			{
+				char *i = strchr(aformatptr, ',');
+				char *j = strchr(aformatptr, '\r');
+				if ((j - aformatptr) < (i - aformatptr))
+				{
+					*j = 0;
+				}
+				else if ((j - aformatptr) > (i - aformatptr))
+				{
+					*i = 0;
+				}
+
+				strcpy(h.acceptedFormat, aformatptr);
+			}
+		}
+	}
+	free(ubuf4);
 
 	return h;
 }
