@@ -60,7 +60,7 @@ int main(void)
 		sleep(1);
 	}
 
-	printf("\n bind successful! \n");
+	printf("\nbind successful! \n");
 
 	while (running)
 	{
@@ -73,8 +73,9 @@ int main(void)
 			exit(-10);
 		}
 
-		char buffer[256] = {0};
-		if (recv(client_fd, buffer, 256, 0) == -1)
+		char buffer[1024];
+		memset(buffer, 0, sizeof(buffer));
+		if (recv(client_fd, buffer, 1024, 0) == -1)
 		{
 			fprintf(stderr, "recv failed...");
 			exit(-4);
@@ -89,7 +90,7 @@ int main(void)
 
 		if (strcmp(http_request.type, "GET") == 0)
 		{
-			printf("entered GET section\n");
+			printf("Entered GET section\n");
 
 			if (strcmp(http_request.target_file, "close_socket") == 0)
 			{
@@ -102,7 +103,7 @@ int main(void)
 				int opened_fd = open(http_request.target_file, O_RDONLY);
 				if (opened_fd == -1)
 				{
-					char *response = "HTTP/1.1 404 NotFound\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n404 Not Found";
+					char response[] = "HTTP/1.1 404 NotFound\r\nContent-Type: text/html\r\nConnection: Closed\r\n\r\n404 Not Found";
 					send(client_fd, response, strlen(response), 0);
 				}
 				else
@@ -111,22 +112,18 @@ int main(void)
 
 					// send file to client
 
-					int responseLength = strlen("HTTP/1.1 200 ok\r\ncontent-type: %s\r\n\r\n") + 10;
-
-					// Reserviere Speicherplatz für die Antwortzeichenfolge
+					char responseHeaderLine[] = "HTTP/1.1 200 ok\r\ncontent-type: %s\r\n\r\n";
+					int responseLength = strlen(responseHeaderLine) + 10;
 					char *response = (char *)malloc(responseLength + 1); // +1 für das Nullzeichen am Ende
-					response = "";
-
-					// Füge den dynamischen String in die Antwortzeichenfolge ein
-					sprintf(response, "HTTP/1.1 200 ok\r\ncontent-type: %s\r\n\r\n", http_request.acceptedFormat);
-
-					// Jetzt kannst du die Antwortzeichenfolge verwenden
+					memset(response, 0, sizeof(responseLength + 1));
+					sprintf(response, responseHeaderLine, http_request.acceptedFormat);
 					printf("\nResponse: %s, length: %d\n", response, responseLength);
 
+					// send desired data and response back to client
 					send(client_fd, response, strlen(response), 0);
 					sendfile(client_fd, opened_fd, 0, 65400);
 
-					// close file descriptor of data
+					// close file descriptor of data and free dynamical memory
 					close(opened_fd);
 					free(response);
 				}
@@ -134,17 +131,20 @@ int main(void)
 		}
 		else if (strcmp(http_request.type, "POST") == 0)
 		{
-			http_request.payload = malloc(http_request.content_length);
+			http_request.payload = (char *)malloc(http_request.content_length + 1);
+			memset(http_request.payload, 0, http_request.content_length + 1);
 			if (http_request.payload == NULL)
 			{
 				fprintf(stderr, "malloc failed for http_req.payload...");
 				exit(-6);
 			}
+
 			if (read(client_fd, http_request.payload, http_request.content_length) == -1)
 			{
 				fprintf(stderr, "reading POST-payload failed...");
 				exit(-7);
 			}
+
 			printf("read output: %s\n", http_request.payload);
 
 			// Put received data into fitting dataframe/format
@@ -259,21 +259,25 @@ HTTP_Request http_request_constr(char *buffer)
 	HTTP_Request h;
 	memset(&h, 0, sizeof(HTTP_Request));
 
-	if (strstr(buffer, "POST"))
+	// get http request type
+	const char post_str[] = "POST";
+	const char get_str[] = "GET";
+
+	if (strstr(buffer, "POST") != NULL)
 	{
-		strcpy(h.type, "POST");
+		strcpy(h.type, post_str);
 	}
-	else if (strstr(buffer, "GET"))
+	else if (strstr(buffer, "GET") != NULL)
 	{
-		strcpy(h.type, "GET");
+		strcpy(h.type, get_str);
 	}
 
 	// get length of buffer
 	int buflen = strlen(buffer);
-	buflen++;
+	buflen += 1;
 
 	// get content-length
-	char *ubuf = malloc(buflen);
+	char *ubuf = (char *)malloc(buflen);
 	if (ubuf != NULL)
 	{
 		strcpy(ubuf, buffer);
@@ -294,12 +298,15 @@ HTTP_Request http_request_constr(char *buffer)
 		{
 			h.content_length = 0;
 		}
+		free(ubuf);
+	}
+	else
+	{
+		fprintf(stderr, "malloc failed...");
 	}
 
-	free(ubuf);
-
 	// connection type
-	char *ubuf1 = malloc(buflen);
+	char *ubuf1 = (char *)malloc(buflen);
 	if (ubuf1 != NULL)
 	{
 		strcpy(ubuf1, buffer);
@@ -314,12 +321,15 @@ HTTP_Request http_request_constr(char *buffer)
 		{
 			strcpy(h.connection, "n");
 		}
+		free(ubuf1);
+	}
+	else
+	{
+		fprintf(stderr, "malloc failed...");
 	}
 
-	free(ubuf1);
-
 	// get content type
-	char *ubuf2 = malloc(buflen);
+	char *ubuf2 = (char *)malloc(buflen);
 	if (ubuf2 != NULL)
 	{
 		strcpy(ubuf2, buffer);
@@ -334,11 +344,15 @@ HTTP_Request http_request_constr(char *buffer)
 		{
 			strcpy(h.connection, "n");
 		}
+		free(ubuf2);
 	}
-	free(ubuf2);
+	else
+	{
+		fprintf(stderr, "malloc failed...");
+	}
 
 	// get target directory
-	char *ubuf3 = malloc(buflen);
+	char *ubuf3 = (char *)malloc(buflen);
 	if (ubuf3 != NULL)
 	{
 		strcpy(ubuf3, buffer);
@@ -354,20 +368,22 @@ HTTP_Request http_request_constr(char *buffer)
 
 		*strchr(tardatptr, ' ') = 0;
 		strcpy(h.target_file, tardatptr);
+		free(ubuf3);
 	}
-	free(ubuf3);
+	else
+	{
+		fprintf(stderr, "malloc failed...");
+	}
 
 	// get accepted format
-	char *ubuf4 = malloc(buflen);
+	char *ubuf4 = (char *)malloc(buflen);
 	if (ubuf4 != NULL)
 	{
-		strcpy(ubuf3, buffer);
+		strcpy(ubuf4, buffer);
 		char *aformatptr = strstr(ubuf4, "Accept: ");
-		printf("\n\n%s\n\n", aformatptr);
 		if (aformatptr != NULL)
 		{
 			aformatptr = strstr(aformatptr, "text");
-			printf("\n\n%s\n\n", aformatptr);
 			if (aformatptr != NULL)
 			{
 				char *i = strchr(aformatptr, ',');
@@ -384,8 +400,12 @@ HTTP_Request http_request_constr(char *buffer)
 				strcpy(h.acceptedFormat, aformatptr);
 			}
 		}
+		free(ubuf4);
 	}
-	free(ubuf4);
+	else
+	{
+		fprintf(stderr, "malloc failed...");
+	}
 
 	return h;
 }
