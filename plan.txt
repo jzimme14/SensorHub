@@ -5,3 +5,10 @@
 5. Build the Transponder Board with the Lolin32 and the BME280 and make it send its data once every hour. While not sending, go to deepsleep-mode.
 
 6. (maybe) add a wakeup-controller to the lolin32 which starts the mcu only if it receives a specific signal
+
+
+
+
+todos:
+1. make index.html file the only file and write function that changes the headerline when clicking on item in sidebar.
+plus: send get request to server when other data is needed and make the server respond to this with the respective data.

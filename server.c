@@ -446,3 +446,11 @@ void print_visible_characters(const char *str)
 		}
 	}
 }
+
+dataframe getLatestData()
+{
+	dataframe d;
+	memset(&d, 0, sizeof(dataframe));
+
+	return d;
+}
