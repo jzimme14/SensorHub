@@ -33,6 +33,8 @@ typedef struct
 	char target_file[20];
 	char *payload;
 	char acceptedFormat[10];
+	char parameter[15];
+	int parameter_int;
 } HTTP_Request;
 
 // prototypes
@@ -87,7 +89,7 @@ int main(void)
 		// http header interface
 		HTTP_Request http_request = http_request_constr(buffer);
 		// print_visible_characters(buffer);
-		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \naccepted-format: %s\n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file, http_request.acceptedFormat);
+		printf("type: %s\ncontent-length: %d\nconnection: %s\ncon-type: %s \ntarget-dir: %s \naccepted-format: %s\nparameter: %s\n\n", http_request.type, http_request.content_length, http_request.connection, http_request.content_type, http_request.target_file, http_request.acceptedFormat, http_request.parameter);
 
 		if (strcmp(http_request.type, "GET") == 0)
 		{
@@ -97,6 +99,31 @@ int main(void)
 			{
 				printf("\nsocket is closed! \n");
 				running = false;
+			}
+			else if (strcmp(http_request.target_file, "measData.db") == 0)
+			{
+				char dete[30];
+				int deteRetVal = 0;
+				memset(dete, 0, sizeof(dete));
+				deteRetVal = getDataFromDatabase(http_request.parameter_int, dete);
+				if (deteRetVal == 0)
+				{
+					char response[200] = "HTTP/1.1 SUCCESS\r\n\r\n";
+					if (strcat(response, dete) == response)
+					{
+						send(client_fd, response, strlen(response), 0);
+						printf("\nData was sent: %s\n", response);
+					}
+					else
+					{
+						fprintf(stderr, "strcat error...");
+						exit(-1010);
+					}
+				}
+				else
+				{
+					send(client_fd, "HTTP/1.1 ERROR\r\n\r\nHTTP/1.1 ERROR", strlen("HTTP/1.1 ERROR\r\n\r\nHTTP/1.1 ERROR"), 0);
+				}
 			}
 			else
 			{
@@ -407,7 +434,9 @@ HTTP_Request http_request_constr(char *buffer)
 	}
 
 	// get target directory
-	char *helper = NULL;
+	char *helper1 = NULL;
+	char *helper2 = NULL;
+	char *ihi = NULL;
 	char *ubuf3 = (char *)malloc(buflen);
 	if (ubuf3 != NULL)
 	{
@@ -422,12 +451,51 @@ HTTP_Request http_request_constr(char *buffer)
 			tardatptr += 5;
 		}
 
-		helper = strchr(tardatptr, ' ');
-		if (helper != NULL)
+		helper1 = strchr(tardatptr, ' ');
+		helper2 = strchr(tardatptr, '?');
+
+		if (helper1 != NULL && helper2 != NULL)
 		{
-			*helper = 0;
+			if (helper1 <= helper2)
+			{
+				*helper1 = 0;
+				strcpy(h.target_file, tardatptr);
+			}
+			else
+			{
+				*helper2 = 0;
+				strcpy(h.target_file, tardatptr);
+				// get parameter
+				helper2 += 1;
+				ihi = strchr(helper2, ' ');
+				if (ihi != NULL)
+				{
+					*ihi = 0;
+					strcpy(h.parameter, helper2);
+					h.parameter_int = atoi(h.parameter);
+				}
+			}
+		}
+		else if (helper1 == NULL)
+		{
+			*helper2 = 0;
+			strcpy(h.target_file, tardatptr);
+			// get parameter
+			helper2 += 1;
+			ihi = strchr(helper2, ' ');
+			if (ihi != NULL)
+			{
+				*ihi = 0;
+				strcpy(h.parameter, helper2);
+				h.parameter_int = atoi(h.parameter);
+			}
+		}
+		else if (helper2 == NULL)
+		{
+			*helper1 = 0;
 			strcpy(h.target_file, tardatptr);
 		}
+
 		free(ubuf3);
 	}
 	else
@@ -505,12 +573,4 @@ void print_visible_characters(const char *str)
 			printf("%c\n", str[i]);
 		}
 	}
-}
-
-dataframe getLatestData()
-{
-	dataframe d;
-	memset(&d, 0, sizeof(dataframe));
-
-	return d;
 }

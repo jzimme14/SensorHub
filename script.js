@@ -29,7 +29,7 @@ function updateUI(data){
 
 // change header text and get new data
 function updateDataAndUI(transponderId){
-  let url = `/measData.db/${transponderId}`;
+  let url = `/measData.db?${transponderId}`;
 
   // change headertext-title after click on sidebar object here
   let headerobj = document.getElementById('headertext');
