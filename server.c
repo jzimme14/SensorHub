@@ -495,6 +495,9 @@ HTTP_Request http_request_constr(char *buffer)
 			*helper1 = 0;
 			strcpy(h.target_file, tardatptr);
 		}
+		else
+		{
+		}
 
 		free(ubuf3);
 	}

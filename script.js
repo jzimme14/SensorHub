@@ -20,6 +20,7 @@ function closeSidebar() {
 
 // update the UI with new data
 function updateUI(data){
+  console.log(data);
   let temperatureElement = document.getElementById('temperature');
   temperatureElement.textContent = data.temperature;
 
@@ -57,7 +58,6 @@ function updateDataAndUI(transponderId){
       if (!response.ok) {
           throw new Error('Network response was not ok');
       }
-      return response.json();
   })
   .then(data => {
       // Update the UI with the fetched data
