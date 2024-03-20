@@ -352,6 +352,7 @@ HTTP_Request http_request_constr(char *buffer)
 	}
 
 	// get target directory
+	char *helper = NULL;
 	char *ubuf3 = (char *)malloc(buflen);
 	if (ubuf3 != NULL)
 	{
@@ -366,8 +367,12 @@ HTTP_Request http_request_constr(char *buffer)
 			tardatptr += 5;
 		}
 
-		*strchr(tardatptr, ' ') = 0;
-		strcpy(h.target_file, tardatptr);
+		helper = strchr(tardatptr, ' ');
+		if (helper != NULL)
+		{
+			*helper = 0;
+			strcpy(h.target_file, tardatptr);
+		}
 		free(ubuf3);
 	}
 	else
