@@ -206,7 +206,7 @@ int main(void)
 		}
 		else
 		{
-			fprintf(stderr, "\naccessed using unknown http-request...");
+			fprintf(stderr, "\naccessed using unknown http-request...\n\n");
 		}
 		// close client connection
 		if (close(client_fd) != 0)

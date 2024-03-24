@@ -25,16 +25,16 @@ function closeSidebar() {
 function updateUI(data){
   console.log(data);
   let temperatureElement = document.getElementById('temp_text');
-  temperatureElement.textContent = data;
+  temperatureElement.textContent = data[1];
 
   let humidityElement = document.getElementById('hum_text');
-  humidityElement.textContent = data;
+  humidityElement.textContent = data[2];
 
   let pressureElement = document.getElementById('pressure_text');
-  humidityElement.textContent = data;
+  pressureElement.textContent = data[3];
 
   let timeElement = document.getElementById('time_text');
-  humidityElement.textContent = data;
+  timeElement.textContent = data[4];
 }
 
 // change header text and get new data
@@ -68,14 +68,11 @@ function updateDataAndUI(transponderId){
       if (!response.ok) {
           throw new Error('Network response was not ok');
       }
-      console.log(response,response.text(),response.arrayBuffer());
-      
+      return response.text();
   })
   .then(data => {
-      console.log(data);
-      console.log(Promise.resolve());
       const dataArray = data.split(',');
-      console.log(dataArray);
+      updateUI(dataArray);
   })
   .catch(error => {
       console.error('ERROR', error);
