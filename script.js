@@ -4,6 +4,9 @@ let sidebarOpen = false;
 const sidebar = document.getElementById('sidebar');
 let transponderId = 1;
 
+let data;
+let response;
+
 function openSidebar() {
   if (!sidebarOpen) {
     sidebar.classList.add('sidebar-responsive');
@@ -21,16 +24,23 @@ function closeSidebar() {
 // update the UI with new data
 function updateUI(data){
   console.log(data);
-  let temperatureElement = document.getElementById('temperature');
-  temperatureElement.textContent = data.temperature;
+  let temperatureElement = document.getElementById('temp_text');
+  temperatureElement.textContent = data;
 
-  let humidityElement = document.getElementById('humidity');
-  humidityElement.textContent = data.humidity;
+  let humidityElement = document.getElementById('hum_text');
+  humidityElement.textContent = data;
+
+  let pressureElement = document.getElementById('pressure_text');
+  humidityElement.textContent = data;
+
+  let timeElement = document.getElementById('time_text');
+  humidityElement.textContent = data;
 }
 
 // change header text and get new data
 function updateDataAndUI(transponderId){
   let url = `/measData.db?${transponderId}`;
+
 
   // change headertext-title after click on sidebar object here
   let headerobj = document.getElementById('headertext');
@@ -58,12 +68,16 @@ function updateDataAndUI(transponderId){
       if (!response.ok) {
           throw new Error('Network response was not ok');
       }
+      console.log(response,response.text(),response.arrayBuffer());
+      
   })
   .then(data => {
-      // Update the UI with the fetched data
-      updateUI(data);
+      console.log(data);
+      console.log(Promise.resolve());
+      const dataArray = data.split(',');
+      console.log(dataArray);
   })
   .catch(error => {
-      console.error('There was a problem with the fetch operation:', error);
+      console.error('ERROR', error);
   });
 }

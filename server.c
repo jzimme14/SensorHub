@@ -108,11 +108,11 @@ int main(void)
 				deteRetVal = getDataFromDatabase(http_request.parameter_int, dete);
 				if (deteRetVal == 0)
 				{
-					char response[200] = "HTTP/1.1 SUCCESS\r\n\r\n";
+					char response[200] = "HTTP/1.1 200 OK\r\n\r\n";
 					if (strcat(response, dete) == response)
 					{
 						send(client_fd, response, strlen(response), 0);
-						printf("\nData was sent: %s\n", response);
+						printf("\nData was sent: \n%s\n", response);
 					}
 					else
 					{
@@ -122,7 +122,7 @@ int main(void)
 				}
 				else
 				{
-					send(client_fd, "HTTP/1.1 ERROR\r\n\r\nHTTP/1.1 ERROR", strlen("HTTP/1.1 ERROR\r\n\r\nHTTP/1.1 ERROR"), 0);
+					send(client_fd, "HTTP/1.1 404 NO\r\n\r\nHTTP/1.1 404 NO", strlen("HTTP/1.1 404 NO\r\n\r\nHTTP/1.1 404 NO"), 0);
 				}
 			}
 			else
@@ -145,7 +145,7 @@ int main(void)
 					char *response = (char *)malloc(responseLength + 1); // +1 für das Nullzeichen am Ende
 					memset(response, 0, sizeof(responseLength + 1));
 					sprintf(response, responseHeaderLine, http_request.acceptedFormat);
-					printf("\nResponse: %s, length: %d\n", response, responseLength);
+					printf("\nResponse: %s\n", response, responseLength);
 
 					// send desired data and response back to client
 					send(client_fd, response, strlen(response), 0);
@@ -476,7 +476,7 @@ HTTP_Request http_request_constr(char *buffer)
 				}
 			}
 		}
-		else if (helper1 == NULL)
+		else if (helper1 == NULL && helper2 != NULL)
 		{
 			*helper2 = 0;
 			strcpy(h.target_file, tardatptr);
@@ -490,7 +490,7 @@ HTTP_Request http_request_constr(char *buffer)
 				h.parameter_int = atoi(h.parameter);
 			}
 		}
-		else if (helper2 == NULL)
+		else if (helper2 == NULL && helper1 != NULL)
 		{
 			*helper1 = 0;
 			strcpy(h.target_file, tardatptr);
