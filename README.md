@@ -22,7 +22,7 @@ The output file is called "sensorhub.out".
 
 Now you are all set to start interacting with the server.
 
-###Start Server as background-operation
+### Start Server as background-operation
 Start the server:
 
 ```
