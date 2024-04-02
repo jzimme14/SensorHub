@@ -49,5 +49,5 @@ The units have to be initialized by flashing the code and setting the specific U
 
 Set the ID in line 39 of the main.cpp file in the lolin32_transponder_pio project folder. 
 ```
-const int id = 1;
+const int id = #specificID#;
 ```
