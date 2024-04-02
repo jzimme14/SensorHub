@@ -18,6 +18,7 @@ To build the server and all necessary code use the compile script:
 ```
 ./compile.sh
 ```
+The output file is called "sensorhub.out".
 
 Now you are all set to start interacting with the server. If you want to let the server run in the background: 
 
