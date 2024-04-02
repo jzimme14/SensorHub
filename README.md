@@ -35,7 +35,7 @@ bg
 
 The server is now up and running in the background waiting for incoming connections.
 
-## Building the Sensor Units
+## Building the Sensorunits
 A Sensor Unit contains just 3 simple components:
 
 + lolin32 or any comparable esp32-based mcu board
@@ -44,7 +44,9 @@ A Sensor Unit contains just 3 simple components:
 
 These components are soldered together according to the datasheets of the specific parts and the circuit diagram in this project. 
 
-Afterwards the units have to be initialized by flashing the code and setting the specific Unit-ID. Every Sensorunit has its own ID which is set in the pio-project's code prior to flashing the chip. The Number given to a Sensorunit can be chosen independently. It is only used to identify the received data and assign it to a specific Sensorunit. 
+### Flashing/Initializing Sensorunits
+The units have to be initialized by flashing the code and setting the specific Unit-ID. Every Sensorunit has its own ID which is set in the pio-project's code prior to flashing the chip. The Number given to a Sensorunit can be chosen independently. It is only used to identify the received data and assign it to a specific Sensorunit. 
+
 Set the ID in line 39 of the main.cpp file in the lolin32_transponder_pio project folder. 
 ```
 const int id = 1;
