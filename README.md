@@ -15,19 +15,19 @@ git clone https://github.com/jzimme14/SensorHub.git
 
 To build the server and all necessary code use the compile script:
 
-'''
+```
 ./compile.sh
-'''
+```
 
 Now you are all set to start interacting with the server. If you want to let the server run in the background: 
 
-'''
+```
 ./sensorhub.out
-'''
+```
 after starting the server, pause its operation by pressing CTRL+Z and send it to the background using: 
-'''
+```
 bg
-'''
+```
 
 The server is now up and running and waiting for incoming connections.
 
