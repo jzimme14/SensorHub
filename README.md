@@ -40,7 +40,7 @@ To open the Web-Interface find out the ip address of the machine the server is r
 #port# = Port the server is listening on. (default: 8080)
 
 Enter into the search bar:
-** #ip-address#:#port#/index.html **
+_#ip-address#:#port#/index.html_
 ![Web-Interface_for_Sensor_Readings](https://github.com/jzimme14/SensorHub/assets/98842597/1b3d7661-d793-403d-96a0-4098466f9990)
 
 ### Configure used Port
@@ -51,7 +51,7 @@ struct sockaddr_in addr = {AF_INET, 0x901F, 0};
 ```
 
 To use, for example, port 12345:
-__ 0d12345 -> 0x3039 -> flip digits = 0x3930 __
+__0d12345 -> 0x3039 -> flip digits = 0x3930__
 Now change the port parameter: 
 
 ```
