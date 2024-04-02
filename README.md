@@ -1,9 +1,8 @@
 # SensorHub
 Compact HTTP-Server to collect temperature, humidity, and pressure data from several Sensor units using HTTP-POST-Requests and display the data by hosting a small Webserver.
 
-This project features a small, custom HTTP server that interacts with several esp32-based sensor units which continuely send temp-,hum- and pressure-measurement data. After receiving a sensor reading the server saves the data into a SQLite database. On receiving a GET-Request the server sends back the web interface to showcase the readings conveniently: 
+This project features a small, custom HTTP server that interacts with several esp32-based sensor units which continuely send temp-,hum- and pressure-measurement data. After receiving a sensor reading the server saves the data into a SQLite database. On receiving a GET-Request the server sends back the web interface to showcase the readings conveniently.
 
-![Web-Interface_for_Sensor_Readings](https://github.com/jzimme14/SensorHub/assets/98842597/1b3d7661-d793-403d-96a0-4098466f9990)
 
 ## How to run the server
 At first, open a terminal and navigate to the folder you want to work in. 
@@ -34,6 +33,32 @@ bg
 ```
 
 The server is now up and running in the background waiting for incoming connections.
+
+### How to use the Web-Interface
+To open the Web-Interface find out the ip address of the machine the server is running on. 
+
+#port# = Port the server is listening on. (default: 8080)
+
+Enter into the search bar:
+** #ip-address#:#port#/index.html **
+![Web-Interface_for_Sensor_Readings](https://github.com/jzimme14/SensorHub/assets/98842597/1b3d7661-d793-403d-96a0-4098466f9990)
+
+### Configure used Port
+The server uses port 8080 by default. This can be adjusted as needed by looking for this line in the server.c file:
+
+```
+struct sockaddr_in addr = {AF_INET, 0x901F, 0};
+```
+
+To use, for example, port 12345:
+__ 0d12345 -> 0x3039 -> flip digits = 0x3930 __
+Now change the port parameter: 
+
+```
+struct sockaddr_in addr = {AF_INET, 0x3930, 0};
+```
+
+Now the server listens on a connection at port 12345!
 
 ## Building the Sensorunits
 A Sensor Unit contains just 3 simple components:
