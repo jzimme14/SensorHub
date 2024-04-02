@@ -9,9 +9,9 @@ This project features a small, custom HTTP server that interacts with several es
 At first, open a terminal and navigate to the folder you want to work in. 
 Then clone this git repository using the following command: 
 
-'''
+```
 git clone https://github.com/jzimme14/SensorHub.git
-'''
+```
 
 To build the server and all necessary code use the compile script:
 
